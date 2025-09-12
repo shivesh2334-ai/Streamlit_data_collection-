@@ -1,2 +1,4 @@
-stremlit
-pandas
+Create requirements.txt:**
+       ```
+       streamlit
+       pandas
