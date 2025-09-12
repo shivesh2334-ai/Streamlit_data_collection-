@@ -1,4 +1,3 @@
-Create requirements.txt:**
-       ```
-       streamlit
-       pandas
+
+streamlit
+pandas
