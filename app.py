@@ -3,58 +3,7 @@ import pandas as pd
 import datetime
 from io import BytesIO
 
-# --- NEW IMPORTS ---
-import gspread
-from google.oauth2.service_account import Credentials
-
-# --- GOOGLE SHEET CONFIGURATION ---
-# Set your Google Sheet details here
-GOOGLE_SHEET_NAME = "Antimicrobial_Resistance_Data"
-GOOGLE_SHEET_WORKSHEET = "Patients"
-
-# Define the required scopes
-SCOPES = [
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive"
-]
-
-# Function to authenticate and access the worksheet
-@st.cache_resource(show_spinner=False)
-def get_gsheet_worksheet():
-    try:
-        # Service account credentials should be in a JSON file in your project directory
-        # Upload your credentials file to your deployment platform or set as secrets
-        credentials = Credentials.from_service_account_file(
-            "gsheets_service_account.json", scopes=SCOPES
-        )
-        gc = gspread.authorize(credentials)
-        sh = gc.open(GOOGLE_SHEET_NAME)
-        worksheet = sh.worksheet(GOOGLE_SHEET_WORKSHEET)
-        return worksheet
-    except Exception as e:
-        st.error(f"Google Sheets connection error: {e}")
-        return None
-
-def save_patient_to_gsheet(patient_data):
-    worksheet = get_gsheet_worksheet()
-    if worksheet is None:
-        st.error("Could not open Google Sheet. Patient data not saved.")
-        return
-    # Ensure consistent column order
-    columns = [
-        'Age', 'Gender', 'Species', 'Rectal_CPE_Pos', 'Setting', 'Acquisition', 'BSI_Source',
-        'CHF', 'CKD', 'Tumor', 'Diabetes', 'Immunosuppressed', 'CR', 'BLBLI_R', 'FQR', '3GC_R',
-        'timestamp'
-    ]
-    # If sheet is new, set headers
-    if len(worksheet.get_all_values()) == 0:
-        worksheet.append_row(columns)
-    # Prepare row data
-    row = [patient_data.get(col, "") for col in columns]
-    worksheet.append_row(row)
-    st.success("Patient data saved to Google Sheet!")
-
-# --- STREAMLIT PAGE CONFIGURATION ---
+# Page configuration
 st.set_page_config(
     page_title="Antimicrobial Resistance Data Collection",
     page_icon="🦠",
@@ -153,9 +102,8 @@ else:
                                index=["", "0", "1"].index(str(st.session_state.patients_data[patient_idx].get('3GC_R', ""))))
         
         # Save button
-        save_to_gsheet = st.checkbox("Also save this patient to Google Sheet")
         if st.form_submit_button("💾 Save Patient Data"):
-            patient_data = {
+            st.session_state.patients_data[patient_idx] = {
                 'Age': age,
                 'Gender': gender,
                 'Species': species,
@@ -174,10 +122,7 @@ else:
                 '3GC_R': gc3_r,
                 'timestamp': datetime.datetime.now().isoformat()
             }
-            st.session_state.patients_data[patient_idx] = patient_data
-            st.success(f"✅ Patient {patient_idx + 1} data saved locally!")
-            if save_to_gsheet:
-                save_patient_to_gsheet(patient_data)
+            st.success(f"✅ Patient {patient_idx + 1} data saved!")
     
     # Display current data
     if st.session_state.patients_data:
@@ -195,14 +140,8 @@ with st.expander("📖 Deployment Instructions"):
        ```
        streamlit
        pandas
-       gspread
-       google-auth
        ```
-    3. **Set up Google Service Account:**
-       - In Google Cloud Console, create a service account and download the JSON credentials file.
-       - Share your Google Sheet with the service account's email.
-       - Save the credentials JSON as `gsheets_service_account.json` in your project folder or set as secret in deployment.
-    4. **Deploy options:**
+    3. **Deploy options:**
        - **Streamlit Cloud:** Push to GitHub → streamlit.io → Deploy
        - **Heroku:** `git push heroku main`
        - **Local:** `streamlit run app.py`
@@ -212,5 +151,4 @@ with st.expander("📖 Deployment Instructions"):
     - Connect to database (PostgreSQL, MongoDB)
     - Add data validation and error handling
     - Implement user roles and permissions
-    - Secure your Google credentials
     """)
