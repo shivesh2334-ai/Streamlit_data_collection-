@@ -10,6 +10,137 @@ st.set_page_config(
     layout="wide"
 )
 
+
+# Google Sheets connection with better error handling
+@st.cache_resource
+def get_google_sheet_client():
+    """Initialize and return Google Sheets client"""
+    try:
+        scope = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        
+        # Check if secrets exist
+        if "gcp_service_account" not in st.secrets:
+            st.error("❌ Google Cloud credentials not found in secrets!")
+            return None, "Missing gcp_service_account in secrets"
+        
+        credentials = service_account.Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"],
+            scopes=scope
+        )
+        
+        client = gspread.authorize(credentials)
+        return client, None
+        
+    except KeyError as e:
+        error_msg = f"Missing key in secrets: {e}"
+        st.error(f"❌ Configuration Error: {error_msg}")
+        return None, error_msg
+    except Exception as e:
+        error_msg = f"Authentication error: {str(e)}"
+        st.error(f"❌ {error_msg}")
+        return None, error_msg
+
+def get_sheet_id():
+    """Extract Sheet ID from secrets"""
+    try:
+        if "sheets" not in st.secrets or "url" not in st.secrets["sheets"]:
+            return None, "Sheet URL not configured in secrets"
+        
+        sheet_url = st.secrets["sheets"]["url"]
+        
+        # Extract ID from URL if it's a full URL
+        if "docs.google.com/spreadsheets" in sheet_url:
+            if "/d/" in sheet_url:
+                sheet_id = sheet_url.split("/d/")[1].split("/")[0]
+            else:
+                return None, "Invalid Sheet URL format"
+        else:
+            # Assume it's already just the ID
+            sheet_id = sheet_url
+        
+        return sheet_id, None
+        
+    except Exception as e:
+        return None, f"Error extracting Sheet ID: {str(e)}"
+
+def read_sheet(sheet_id, worksheet_name="Sheet1"):
+    """Read data from Google Sheet"""
+    try:
+        client, error = get_google_sheet_client()
+        if error:
+            return None, error
+        
+        if not sheet_id:
+            return None, "Sheet ID is empty"
+        
+        # Try to open the spreadsheet
+        try:
+            sheet = client.open_by_key(sheet_id)
+        except gspread.exceptions.SpreadsheetNotFound:
+            return None, f"Spreadsheet not found. Please verify:\n1. Sheet ID is correct: {sheet_id}\n2. Sheet is shared with service account"
+        except gspread.exceptions.APIError as e:
+            return None, f"Google API Error: {str(e)}"
+        
+        # Try to get the worksheet
+        try:
+            worksheet = sheet.worksheet(worksheet_name)
+        except gspread.exceptions.WorksheetNotFound:
+            return None, f"Worksheet '{worksheet_name}' not found. Available worksheets: {[ws.title for ws in sheet.worksheets()]}"
+        
+        # Get all records
+        data = worksheet.get_all_records()
+        
+        if not data:
+            return pd.DataFrame(), None
+        
+        return pd.DataFrame(data), None
+        
+    except Exception as e:
+        return None, f"Unexpected error: {str(e)}"
+
+def append_to_sheet(sheet_id, row_data, worksheet_name="Sheet1"):
+    """Append a row to Google Sheet"""
+    try:
+        client, error = get_google_sheet_client()
+        if error:
+            return False, error
+        
+        sheet = client.open_by_key(sheet_id)
+        worksheet = sheet.worksheet(worksheet_name)
+        worksheet.append_row(row_data)
+        
+        return True, None
+        
+    except gspread.exceptions.SpreadsheetNotFound:
+        return False, "Spreadsheet not found"
+    except gspread.exceptions.WorksheetNotFound:
+        return False, f"Worksheet '{worksheet_name}' not found"
+    except Exception as e:
+        return False, f"Error appending data: {str(e)}"
+
+def initialize_sheet_if_empty(sheet_id, worksheet_name="Sheet1"):
+    """Initialize sheet with headers if empty"""
+    try:
+        client, error = get_google_sheet_client()
+        if error:
+            return False, error
+        
+        sheet = client.open_by_key(sheet_id)
+        worksheet = sheet.worksheet(worksheet_name)
+        
+        # Check if sheet is empty
+        if not worksheet.get_all_values():
+            headers = ["Patient ID", "Antibiotic", "Dosage", "Date", "Time", "Added By"]
+            worksheet.append_row(headers)
+            return True, "Headers added successfully"
+        
+        return True, None
+        
+    except Exception as e:
+        return False, f"Error initializing sheet: {str(e)}"
 # Initialize session state
 if 'patients_data' not in st.session_state:
     st.session_state.patients_data = []
