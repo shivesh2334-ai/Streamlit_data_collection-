@@ -168,7 +168,7 @@ with st.sidebar:
             st.download_button(
                 label="Download CSV",
                 data=csv,
-                file_name=f"patient_data_{datetime.date.today()}.csv",
+                file_name=f"patient_data_{datetime.now().date()}.csv",  # ✅ Fixed",
                 mime="text/csv"
             )
 
@@ -237,26 +237,26 @@ else:
         
         # Save button
         if st.form_submit_button("💾 Save Patient Data"):
-            st.session_state.patients_data[patient_idx] = {
-                'Age': age,
-                'Gender': gender,
-                'Species': species,
-                'Rectal_CPE_Pos': rectal_cpe,
-                'Setting': setting,
-                'Acquisition': acquisition,
-                'BSI_Source': bsi_source,
-                'CHF': chf,
-                'CKD': ckd,
-                'Tumor': tumor,
-                'Diabetes': diabetes,
-                'Immunosuppressed': immunosuppressed,
-                'CR': cr,
-                'BLBLI_R': blbli_r,
-                'FQR': fqr,
-                '3GC_R': gc3_r,
-                'timestamp': datetime.datetime.now().isoformat()
-            }
-            st.success(f"✅ Patient {patient_idx + 1} data saved!")
+    st.session_state.patients_data[patient_idx] = {
+        'Age': age,
+        'Gender': gender,
+        'Species': species,
+        'Rectal_CPE_Pos': rectal_cpe,
+        'Setting': setting,
+        'Acquisition': acquisition,
+        'BSI_Source': bsi_source,
+        'CHF': chf,
+        'CKD': ckd,
+        'Tumor': tumor,
+        'Diabetes': diabetes,
+        'Immunosuppressed': immunosuppressed,
+        'CR': cr,
+        'BLBLI_R': blbli_r,
+        'FQR': fqr,
+        '3GC_R': gc3_r,
+        'timestamp': datetime.now().isoformat()  # ✅ Fixed
+    }
+    st.success(f"✅ Patient {patient_idx + 1} data saved!")
     
     # Display current data
     if st.session_state.patients_data:
