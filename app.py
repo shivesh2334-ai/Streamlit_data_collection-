@@ -262,10 +262,27 @@ else:
         df = pd.DataFrame(st.session_state.patients_data)
         st.dataframe(df, use_container_width=True)
 
-# Instructions
+# ------------------------------------------------------------
+# DEPLOYMENT INSTRUCTIONS
+# ------------------------------------------------------------
 with st.expander("📖 Deployment Instructions"):
-    st.markdown("""
-    **To deploy this app:**
+    st.markdown(
+        """
+        **To deploy this app:**
 
-    1. **Save this code** as `app.py`
-    2. **Create requirements.txt:**
+        1. Save this code as `app.py`
+        2. Create a file named `requirements.txt` with the following:
+           ```
+           streamlit
+           pandas
+           gspread
+           google-auth
+           ```
+        3. Deploy via:
+           - **Streamlit Cloud:** Push to GitHub → [streamlit.io](https://streamlit.io) → Deploy  
+           - **Local (for testing):**  
+             ```bash
+             streamlit run app.py
+             ```
+        """
+    )
