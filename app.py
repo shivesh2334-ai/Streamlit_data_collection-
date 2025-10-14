@@ -237,7 +237,7 @@ else:
         
         # Save button
 if st.form_submit_button("💾 Save Patient Data"):
-   st.session_state.patients_data[patient_idx] = {
+ st.session_state.patients_data[patient_idx] = {
         'Age': age,
         'Gender': gender,
         'Species': species,
