@@ -1,5 +1,3 @@
-
-
 import streamlit as st
 import gspread
 from google.oauth2 import service_account
@@ -23,20 +21,20 @@ def get_google_sheet_client():
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive"
         ]
-        
+
         # Check if secrets exist
         if "gcp_service_account" not in st.secrets:
             st.error("❌ Google Cloud credentials not found in secrets!")
             return None, "Missing gcp_service_account in secrets"
-        
+
         credentials = service_account.Credentials.from_service_account_info(
             st.secrets["gcp_service_account"],
             scopes=scope
         )
-        
+
         client = gspread.authorize(credentials)
         return client, None
-        
+
     except KeyError as e:
         error_msg = f"Missing key in secrets: {e}"
         st.error(f"❌ Configuration Error: {error_msg}")
@@ -51,9 +49,9 @@ def get_sheet_id():
     try:
         if "sheets" not in st.secrets or "url" not in st.secrets["sheets"]:
             return None, "Sheet URL not configured in secrets"
-        
+
         sheet_url = st.secrets["sheets"]["url"]
-        
+
         # Extract ID from URL if it's a full URL
         if "docs.google.com/spreadsheets" in sheet_url:
             if "/d/" in sheet_url:
@@ -63,9 +61,9 @@ def get_sheet_id():
         else:
             # Assume it's already just the ID
             sheet_id = sheet_url
-        
+
         return sheet_id, None
-        
+
     except Exception as e:
         return None, f"Error extracting Sheet ID: {str(e)}"
 
@@ -75,10 +73,10 @@ def read_sheet(sheet_id, worksheet_name="Sheet1"):
         client, error = get_google_sheet_client()
         if error:
             return None, error
-        
+
         if not sheet_id:
             return None, "Sheet ID is empty"
-        
+
         # Try to open the spreadsheet
         try:
             sheet = client.open_by_key(sheet_id)
@@ -86,21 +84,21 @@ def read_sheet(sheet_id, worksheet_name="Sheet1"):
             return None, f"Spreadsheet not found. Please verify:\n1. Sheet ID is correct: {sheet_id}\n2. Sheet is shared with service account"
         except gspread.exceptions.APIError as e:
             return None, f"Google API Error: {str(e)}"
-        
+
         # Try to get the worksheet
         try:
             worksheet = sheet.worksheet(worksheet_name)
         except gspread.exceptions.WorksheetNotFound:
             return None, f"Worksheet '{worksheet_name}' not found. Available worksheets: {[ws.title for ws in sheet.worksheets()]}"
-        
+
         # Get all records
         data = worksheet.get_all_records()
-        
+
         if not data:
             return pd.DataFrame(), None
-        
+
         return pd.DataFrame(data), None
-        
+
     except Exception as e:
         return None, f"Unexpected error: {str(e)}"
 
@@ -110,13 +108,13 @@ def append_to_sheet(sheet_id, row_data, worksheet_name="Sheet1"):
         client, error = get_google_sheet_client()
         if error:
             return False, error
-        
+
         sheet = client.open_by_key(sheet_id)
         worksheet = sheet.worksheet(worksheet_name)
         worksheet.append_row(row_data)
-        
+
         return True, None
-        
+
     except gspread.exceptions.SpreadsheetNotFound:
         return False, "Spreadsheet not found"
     except gspread.exceptions.WorksheetNotFound:
@@ -130,18 +128,18 @@ def initialize_sheet_if_empty(sheet_id, worksheet_name="Sheet1"):
         client, error = get_google_sheet_client()
         if error:
             return False, error
-        
+
         sheet = client.open_by_key(sheet_id)
         worksheet = sheet.worksheet(worksheet_name)
-        
+
         # Check if sheet is empty
         if not worksheet.get_all_values():
             headers = ["Patient ID", "Antibiotic", "Dosage", "Date", "Time", "Added By"]
             worksheet.append_row(headers)
             return True, "Headers added successfully"
-        
+
         return True, None
-        
+
     except Exception as e:
         return False, f"Error initializing sheet: {str(e)}"
 # Initialize session state
@@ -156,11 +154,11 @@ with st.sidebar:
     st.header("📊 Data Management")
     patient_count = len(st.session_state.patients_data)
     st.metric("Total Patients", patient_count)
-    
+
     if st.button("➕ Add New Patient"):
         st.session_state.patients_data.append({})
         st.rerun()
-    
+
     if patient_count > 0:
         if st.button("📥 Download CSV"):
             df = pd.DataFrame(st.session_state.patients_data)
@@ -182,28 +180,28 @@ else:
         range(len(st.session_state.patients_data)),
         format_func=lambda x: f"Patient {x+1}"
     )
-    
+
     st.markdown(f"### Editing Patient {patient_idx + 1}")
-    
+
     # Create form
     with st.form(f"patient_form_{patient_idx}"):
         col1, col2 = st.columns(2)
-        
+
         with col1:
             st.subheader("👤 Demographics")
-            age = st.number_input("Age", min_value=18, max_value=90, 
+            age = st.number_input("Age", min_value=18, max_value=90,
                                 value=st.session_state.patients_data[patient_idx].get('Age', 65))
-            gender = st.selectbox("Gender", ["", "Male", "Female"], 
+            gender = st.selectbox("Gender", ["", "Male", "Female"],
                                 index=["", "Male", "Female"].index(st.session_state.patients_data[patient_idx].get('Gender', "")))
-            
+
             st.subheader("🔬 Microbiological Data")
-            species = st.selectbox("Species", 
+            species = st.selectbox("Species",
                                  ["", "E. coli", "Klebsiella spp.", "Proteus spp.", "Pseudomonas spp.", "Acinetobacter spp."],
                                  index=["", "E. coli", "Klebsiella spp.", "Proteus spp.", "Pseudomonas spp.", "Acinetobacter spp."].index(
                                      st.session_state.patients_data[patient_idx].get('Species', "")))
             rectal_cpe = st.selectbox("Rectal CPE Positive", ["", "0", "1"],
                                     index=["", "0", "1"].index(str(st.session_state.patients_data[patient_idx].get('Rectal_CPE_Pos', ""))))
-            
+
             st.subheader("🏥 Clinical Context")
             setting = st.selectbox("Setting", ["", "ICU", "Internal Medicine"],
                                  index=["", "ICU", "Internal Medicine"].index(st.session_state.patients_data[patient_idx].get('Setting', "")))
@@ -211,7 +209,7 @@ else:
                                      index=["", "Community", "Hospital"].index(st.session_state.patients_data[patient_idx].get('Acquisition', "")))
             bsi_source = st.selectbox("BSI Source", ["", "Primary", "Lung", "Abdomen", "UTI"],
                                     index=["", "Primary", "Lung", "Abdomen", "UTI"].index(st.session_state.patients_data[patient_idx].get('BSI_Source', "")))
-        
+
         with col2:
             st.subheader("🫀 Comorbidities")
             chf = st.selectbox("CHF", ["", "0", "1"],
@@ -224,7 +222,7 @@ else:
                                   index=["", "0", "1"].index(str(st.session_state.patients_data[patient_idx].get('Diabetes', ""))))
             immunosuppressed = st.selectbox("Immunosuppressed", ["", "0", "1"],
                                           index=["", "0", "1"].index(str(st.session_state.patients_data[patient_idx].get('Immunosuppressed', ""))))
-            
+
             st.subheader("🧪 Resistance Outcomes")
             cr = st.selectbox("CR (Carbapenem Resistance)", ["", "0", "1"],
                             index=["", "0", "1"].index(str(st.session_state.patients_data[patient_idx].get('CR', ""))))
@@ -234,55 +232,40 @@ else:
                              index=["", "0", "1"].index(str(st.session_state.patients_data[patient_idx].get('FQR', ""))))
             gc3_r = st.selectbox("3GC_R", ["", "0", "1"],
                                index=["", "0", "1"].index(str(st.session_state.patients_data[patient_idx].get('3GC_R', ""))))
-        
-        # Save button 
-if st.form_submit_button("💾 Save Patient Data"):
-   st.session_state.patients_data[patient_idx] = {
-        'Age': age,
-        'Gender': gender,
-        'Species': species,
-        'Rectal_CPE_Pos': rectal_cpe,
-        'Setting': setting,
-        'Acquisition': acquisition,
-        'BSI_Source': bsi_source,
-        'CHF': chf,
-        'CKD': ckd,
-        'Tumor': tumor,
-        'Diabetes': diabetes,
-        'Immunosuppressed': immunosuppressed,
-        'CR': cr,
-        'BLBLI_R': blbli_r,
-        'FQR': fqr,
-        '3GC_R': gc3_r,
-        'timestamp': datetime.now().isoformat()  # ✅ Fixed
-    }
- st.success(f"✅ Patient {patient_idx + 1} data saved!")
-    
+
+        # Save button
+        if st.form_submit_button("💾 Save Patient Data"):
+            st.session_state.patients_data[patient_idx] = {
+                'Age': age,
+                'Gender': gender,
+                'Species': species,
+                'Rectal_CPE_Pos': rectal_cpe,
+                'Setting': setting,
+                'Acquisition': acquisition,
+                'BSI_Source': bsi_source,
+                'CHF': chf,
+                'CKD': ckd,
+                'Tumor': tumor,
+                'Diabetes': diabetes,
+                'Immunosuppressed': immunosuppressed,
+                'CR': cr,
+                'BLBLI_R': blbli_r,
+                'FQR': fqr,
+                '3GC_R': gc3_r,
+                'timestamp': datetime.now().isoformat()  # ✅ Fixed
+            }
+            st.success(f"✅ Patient {patient_idx + 1} data saved!")
+
     # Display current data
-if st.session_state.patients_data:
-    st.markdown("### 📋 Current Data Summary")
-    df = pd.DataFrame(st.session_state.patients_data)
-    st.dataframe(df, use_container_width=True)
+    if st.session_state.patients_data:
+        st.markdown("### 📋 Current Data Summary")
+        df = pd.DataFrame(st.session_state.patients_data)
+        st.dataframe(df, use_container_width=True)
 
 # Instructions
 with st.expander("📖 Deployment Instructions"):
     st.markdown("""
     **To deploy this app:**
-    
+
     1. **Save this code** as `app.py`
     2. **Create requirements.txt:**
-       ```
-       streamlit
-       pandas
-       ```
-    3. **Deploy options:**
-       - **Streamlit Cloud:** Push to GitHub → streamlit.io → Deploy
-       - **Heroku:** `git push heroku main`
-       - **Local:** `streamlit run app.py`
-    
-    **For production use:**
-    - Add authentication (streamlit-authenticator)
-    - Connect to database (PostgreSQL, MongoDB)
-    - Add data validation and error handling
-    - Implement user roles and permissions
-    """)
