@@ -236,8 +236,8 @@ else:
                                index=["", "0", "1"].index(str(st.session_state.patients_data[patient_idx].get('3GC_R', ""))))
         
         # Save button
-        if st.form_submit_button("💾 Save Patient Data"):
-    st.session_state.patients_data[patient_idx] = {
+if st.form_submit_button("💾 Save Patient Data"):
+   st.session_state.patients_data[patient_idx] = {
         'Age': age,
         'Gender': gender,
         'Species': species,
