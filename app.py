@@ -235,9 +235,9 @@ else:
             gc3_r = st.selectbox("3GC_R", ["", "0", "1"],
                                index=["", "0", "1"].index(str(st.session_state.patients_data[patient_idx].get('3GC_R', ""))))
         
-        # Save button
+        # Save button 
 if st.form_submit_button("💾 Save Patient Data"):
- st.session_state.patients_data[patient_idx] = {
+   st.session_state.patients_data[patient_idx] = {
         'Age': age,
         'Gender': gender,
         'Species': species,
@@ -259,10 +259,10 @@ if st.form_submit_button("💾 Save Patient Data"):
     st.success(f"✅ Patient {patient_idx + 1} data saved!")
     
     # Display current data
-    if st.session_state.patients_data:
-        st.markdown("### 📋 Current Data Summary")
-        df = pd.DataFrame(st.session_state.patients_data)
-        st.dataframe(df, use_container_width=True)
+if st.session_state.patients_data:
+    st.markdown("### 📋 Current Data Summary")
+    df = pd.DataFrame(st.session_state.patients_data)
+    st.dataframe(df, use_container_width=True)
 
 # Instructions
 with st.expander("📖 Deployment Instructions"):
