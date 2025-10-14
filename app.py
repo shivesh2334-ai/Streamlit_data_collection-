@@ -256,7 +256,7 @@ if st.form_submit_button("💾 Save Patient Data"):
         '3GC_R': gc3_r,
         'timestamp': datetime.now().isoformat()  # ✅ Fixed
     }
-    st.success(f"✅ Patient {patient_idx + 1} data saved!")
+ st.success(f"✅ Patient {patient_idx + 1} data saved!")
     
     # Display current data
 if st.session_state.patients_data:
