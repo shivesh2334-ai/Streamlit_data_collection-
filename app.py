@@ -13,7 +13,6 @@ Features / improvements:
 - Better session_state initialization and smaller, focused helper functions
 """
 
-import io
 import datetime
 from typing import List, Dict
 
@@ -21,7 +20,6 @@ import pandas as pd
 import streamlit as st
 from google.oauth2.service_account import Credentials
 import gspread
-from gspread_dataframe import set_with_dataframe
 
 # Page config
 st.set_page_config(page_title="AMR Data Collector", page_icon="🦠", layout="wide")
@@ -294,114 +292,5 @@ else:
             setting_opts = ["ICU", "Internal Medicine", "Emergency", "Surgical Ward"]
             setting = st.selectbox("Setting", setting_opts, index=safe_index(setting_opts, existing.get("Setting", "ICU")))
             acquisition = st.selectbox("Acquisition", ["Community", "Hospital"], index=safe_index(["Community", "Hospital"], existing.get("Acquisition", "Community")))
-            bsi_opts = ["Primary", "Lung", "Abdomen", "UTI", "Catheter", "Other"]
-            bsi_source = st.selectbox("BSI Source", bsi_opts, index=safe_index(bsi_opts, existing.get("BSI_Source", "Primary")))
-
-        with col_b:
-            chf = st.selectbox("CHF", [0, 1], index=safe_index([0, 1], int(existing.get("CHF", 0))))
-            ckd = st.selectbox("CKD", [0, 1], index=safe_index([0, 1], int(existing.get("CKD", 0))))
-            tumor = st.selectbox("Tumor", [0, 1], index=safe_index([0, 1], int(existing.get("Tumor", 0))))
-            diabetes = st.selectbox("Diabetes", [0, 1], index=safe_index([0, 1], int(existing.get("Diabetes", 0))))
-            imsup = st.selectbox("Immunosuppressed", [0, 1], index=safe_index([0, 1], int(existing.get("Immunosuppressed", 0))))
-            cr = st.selectbox("CR (Carbapenem Resistance)", [0, 1], index=safe_index([0, 1], int(existing.get("CR", 0))))
-            blbli = st.selectbox("BLBLI_R", [0, 1], index=safe_index([0, 1], int(existing.get("BLBLI_R", 0))))
-            fqr = st.selectbox("FQR", [0, 1], index=safe_index([0, 1], int(existing.get("FQR", 0))))
-            gc3 = st.selectbox("3GC_R", [0, 1], index=safe_index([0, 1], int(existing.get("GC3_R", 0))))
-
-        save_btn = st.form_submit_button("💾 Save")
-        cancel_btn = st.form_submit_button("❌ Cancel")
-
-        if save_btn:
-            record = {
-                "Age": age,
-                "Gender": gender,
-                "Species": species,
-                "Rectal_CPE_Pos": rectal,
-                "Setting": setting,
-                "Acquisition": acquisition,
-                "BSI_Source": bsi_source,
-                "CHF": chf,
-                "CKD": ckd,
-                "Tumor": tumor,
-                "Diabetes": diabetes,
-                "Immunosuppressed": imsup,
-                "CR": cr,
-                "BLBLI_R": blbli,
-                "FQR": fqr,
-                "GC3_R": gc3,
-                "Timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "Entry_By": st.secrets.get("user_email", "Unknown"),
-            }
-
-            # Local update
-            if is_new:
-                st.session_state.patients_df = st.session_state.patients_df.append(record, ignore_index=True)
-            else:
-                st.session_state.patients_df.iloc[idx] = pd.Series(record)
-
-            # Push to sheet if connected
-            if client:
-                if is_new:
-                    ok = append_patient_to_sheet(client, spreadsheet_id, record)
-                    if ok:
-                        # refresh entire sheet for consistent ordering and ids
-                        st.session_state.patients_df = load_data_from_sheets(client, spreadsheet_id)
-                        st.success("New record added to Google Sheet.")
-                    else:
-                        st.error("Failed to add record to Google Sheet.")
-                else:
-                    ok = update_patient_in_sheet(client, spreadsheet_id, idx, record)
-                    if ok:
-                        st.session_state.patients_df = load_data_from_sheets(client, spreadsheet_id)
-                        st.success("Record updated in Google Sheet.")
-                    else:
-                        st.error("Failed to update record in Google Sheet.")
-
-            else:
-                st.info("Saved locally (Google Sheets not connected). Use Sync later to push/fetch changes.")
-
-            st.session_state.editing_mode = False
-            st.session_state.is_new = False
-            st.session_state.selected_idx = None
-            st.experimental_rerun()
-
-        if cancel_btn:
-            st.session_state.editing_mode = False
-            st.session_state.is_new = False
-            st.session_state.selected_idx = None
-            st.experimental_rerun()
-
-
-# Footer instructions
-with st.expander("Setup & Notes"):
-    st.write(
-        "1) Create a Google Cloud Service Account and enable Sheets & Drive APIs.\n"
-        "2) Share your Google Sheet with the service account email.\n"
-        "3) Add service account JSON contents under [gcp_service_account] in .streamlit/secrets.toml and set spreadsheet_id.\n"
-        "4) If you paste the private_key into secrets.toml, escape newlines as \\n; this app will fix them automatically."
-    )
-
-# ------------------------------------------------------------
-# DEPLOYMENT INSTRUCTIONS
-# ------------------------------------------------------------
-with st.expander("📖 Deployment Instructions"):
-    st.markdown(
-        """
-        **To deploy this app:**
-
-        1. Save this code as `app.py`
-        2. Create a file named `requirements.txt` with the following:
-           ```
-           streamlit
-           pandas
-           gspread
-           google-auth
-           ```
-        3. Deploy via:
-           - **Streamlit Cloud:** Push to GitHub → [streamlit.io](https://streamlit.io) → Deploy
-           - **Local (for testing):**
-             ```bash
-             streamlit run app.py
-             ```
-        """
-    )
+            bsi_opts = ["Primary", "Lung", "](#)
+
