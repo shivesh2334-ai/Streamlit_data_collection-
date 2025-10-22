@@ -380,7 +380,7 @@ with st.expander("Setup & Notes"):
         "3) Add service account JSON contents under [gcp_service_account] in .streamlit/secrets.toml and set spreadsheet_id.\n"
         "4) If you paste the private_key into secrets.toml, escape newlines as \\n; this app will fix them automatically."
     )
-        client = gspread.authorize(credentials)
+    client = gspread.authorize(credentials)
         return client, None
 
     except KeyError as e:
