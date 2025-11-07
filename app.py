@@ -292,5 +292,5 @@ else:
             setting_opts = ["ICU", "Internal Medicine", "Emergency", "Surgical Ward"]
             setting = st.selectbox("Setting", setting_opts, index=safe_index(setting_opts, existing.get("Setting", "ICU")))
             acquisition = st.selectbox("Acquisition", ["Community", "Hospital"], index=safe_index(["Community", "Hospital"], existing.get("Acquisition", "Community")))
-            bsi_opts = ["Primary", "Lung", "](#)
+            bsi_opts = ["Primary", "Lung", "Secondary", "Unknown"]
 
